@@ -53,16 +53,9 @@ open prepai-frontend.html
 
 ---
 
-## 🌐 Live Demo
-
-👉 (Add your Vercel link here)
-
----
-
 ## 🎥 Demo Video (MANDATORY)
 
-👉 (Add Google Drive / YouTube link here)
-
+👉 https://drive.google.com/file/d/1fj0b6OAhTL_O4-u815NhXOyyY3O1X253/view?usp=sharing
 ---
 
 ## 📡 API Routes
