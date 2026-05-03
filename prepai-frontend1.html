@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PrepAI – Smart Exam Prep</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #f0f2f8;
+    --sidebar: #ffffff;
+    --card: #ffffff;
+    --primary: #3d3dc8;
+    --primary-light: #6b6bde;
+    --primary-dark: #2a2a9e;
+    --accent: #ff5c5c;
+    --text: #1a1a2e;
+    --muted: #6e7191;
+    --border: #e4e6f0;
+    --success: #22c55e;
+    --warn: #f59e0b;
+    --radius: 14px;
+    --shadow: 0 2px 16px rgba(61,61,200,0.08);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); display:flex; min-height:100vh; }
+
+  /* SIDEBAR */
+  .sidebar {
+    width:200px; min-height:100vh; background:var(--sidebar);
+    border-right:1px solid var(--border); padding:24px 16px;
+    display:flex; flex-direction:column; gap:8px; position:fixed; top:0; left:0; z-index:100;
+  }
+  .logo { font-family:'Syne',sans-serif; font-weight:800; font-size:22px; color:var(--primary); margin-bottom:20px; padding:0 8px; }
+  .user-card { display:flex; align-items:center; gap:10px; padding:10px 8px; margin-bottom:8px; }
+  .avatar { width:36px; height:36px; background:var(--primary); border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:14px; }
+  .user-info .name { font-weight:600; font-size:13px; }
+  .user-info .univ { font-size:11px; color:var(--muted); }
+  .nav-item {
+    display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px;
+    cursor:pointer; font-size:14px; font-weight:500; color:var(--muted); transition:all .2s;
+  }
+  .nav-item:hover { background:var(--bg); color:var(--text); }
+  .nav-item.active { background:#ededfb; color:var(--primary); font-weight:600; }
+  .nav-icon { font-size:16px; }
+
+  /* TOPBAR */
+  .topbar {
+    position:fixed; top:0; left:200px; right:0; height:56px;
+    background:#fff; border-bottom:1px solid var(--border);
+    display:flex; align-items:center; justify-content:flex-end;
+    padding:0 28px; gap:24px; z-index:99;
+  }
+  .topbar a { font-size:13px; font-weight:500; color:var(--muted); cursor:pointer; text-decoration:none; }
+  .topbar a.active { color:var(--primary); font-weight:700; }
+
+  /* MAIN */
+  .main { margin-left:200px; margin-top:56px; padding:28px; flex:1; min-height:calc(100vh - 56px); }
+
+  /* PAGE */
+  .page { display:none; }
+  .page.active { display:block; }
+
+  /* CARDS */
+  .card { background:var(--card); border-radius:var(--radius); padding:24px; box-shadow:var(--shadow); }
+  .grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:20px; }
+  .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
+
+  /* STAT CARD */
+  .stat-card { background:#fff; border-radius:var(--radius); padding:20px 24px; box-shadow:var(--shadow); }
+  .stat-badge { font-size:11px; font-weight:600; padding:3px 8px; border-radius:20px; margin-bottom:10px; display:inline-block; }
+  .stat-badge.green { background:#dcfce7; color:#16a34a; }
+  .stat-badge.red { background:#fee2e2; color:#dc2626; }
+  .stat-icon { font-size:28px; margin-bottom:10px; }
+  .stat-label { font-size:11px; color:var(--muted); font-weight:600; letter-spacing:.5px; text-transform:uppercase; margin-bottom:4px; }
+  .stat-value { font-family:'Syne',sans-serif; font-size:36px; font-weight:800; }
+
+  /* WEAK AREAS */
+  .weak-card { background:#fff; border-radius:var(--radius); padding:20px; box-shadow:var(--shadow); }
+  .weak-title { font-size:11px; font-weight:700; color:var(--muted); letter-spacing:.5px; text-transform:uppercase; margin-bottom:14px; }
+  .weak-item { display:flex; align-items:center; gap:10px; padding:10px; border:1px solid var(--border); border-radius:10px; margin-bottom:8px; font-size:13px; font-weight:500; }
+  .warn-icon { color:#f59e0b; font-size:16px; }
+
+  /* SECTION TITLE */
+  .section-title { font-family:'Syne',sans-serif; font-size:20px; font-weight:700; margin-bottom:4px; }
+  .section-sub { font-size:13px; color:var(--muted); margin-bottom:20px; }
+
+  /* UPLOAD PAGE */
+  .upload-zone {
+    border:2px dashed var(--border); border-radius:var(--radius);
+    padding:60px 40px; text-align:center; background:#fafbff;
+    transition:all .2s; cursor:pointer;
+  }
+  .upload-zone:hover { border-color:var(--primary); background:#f0f0fd; }
+  .upload-zone.drag { border-color:var(--primary); background:#e8e8fb; }
+  .upload-icon { font-size:48px; margin-bottom:16px; }
+  .upload-zone h3 { font-size:18px; font-weight:600; margin-bottom:6px; }
+  .upload-zone p { font-size:13px; color:var(--muted); margin-bottom:20px; }
+  .btn-primary {
+    background:var(--primary); color:#fff; border:none; padding:11px 22px;
+    border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; transition:all .2s;
+  }
+  .btn-primary:hover { background:var(--primary-dark); }
+  .btn-outline {
+    background:transparent; color:var(--primary); border:2px solid var(--primary);
+    padding:9px 20px; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; transition:all .2s;
+  }
+  .btn-outline:hover { background:#ededfb; }
+  .file-list { margin-top:24px; }
+  .file-item {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:12px 16px; background:#fff; border-radius:10px;
+    border:1px solid var(--border); margin-bottom:8px;
+  }
+  .file-left { display:flex; align-items:center; gap:12px; }
+  .file-icon { font-size:20px; }
+  .file-name { font-size:13px; font-weight:600; }
+  .file-size { font-size:11px; color:var(--muted); }
+  .file-delete { background:none; border:none; cursor:pointer; font-size:16px; color:var(--muted); }
+  .file-delete:hover { color:var(--accent); }
+  .analyze-bar {
+    display:flex; align-items:center; justify-content:space-between;
+    background:#fff; border-radius:var(--radius); padding:16px 20px;
+    box-shadow:var(--shadow); margin-top:16px;
+  }
+  .analyze-info { font-size:13px; color:var(--muted); display:flex; align-items:center; gap:8px; }
+
+  /* TIPS CARD */
+  .tips-card { background:#fff; border-radius:var(--radius); padding:20px; box-shadow:var(--shadow); }
+  .tips-title { font-weight:700; font-size:14px; margin-bottom:12px; }
+  .tip-item { display:flex; align-items:flex-start; gap:8px; font-size:12px; color:var(--muted); margin-bottom:8px; line-height:1.5; }
+  .tip-check { color:var(--success); font-size:14px; }
+  .ai-badge { background:#ededfb; color:var(--primary); font-size:11px; font-weight:600; padding:3px 8px; border-radius:20px; display:inline-flex; align-items:center; gap:4px; }
+
+  /* HEATMAP */
+  .heatmap-grid { display:grid; grid-template-columns:repeat(10,1fr); gap:8px; margin:16px 0; }
+  .hm-cell { aspect-ratio:1; border-radius:8px; transition:transform .2s; cursor:pointer; }
+  .hm-cell:hover { transform:scale(1.15); }
+
+  /* AI INSIGHT BANNER */
+  .ai-banner { background:linear-gradient(135deg,var(--primary),var(--primary-light)); color:#fff; border-radius:var(--radius); padding:32px; margin-top:20px; }
+  .ai-banner h3 { font-family:'Syne',sans-serif; font-size:24px; font-weight:700; margin:10px 0 8px; }
+  .ai-banner p { font-size:13px; opacity:.85; margin-bottom:20px; line-height:1.6; }
+
+  /* INSIGHTS */
+  .insights-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:20px; }
+  .high-yield { background:#fff; border-radius:var(--radius); padding:20px; box-shadow:var(--shadow); }
+  .hy-title { font-family:'Syne',sans-serif; font-size:16px; font-weight:700; margin-bottom:16px; }
+  .hy-item { display:flex; align-items:center; gap:12px; padding:12px; border-radius:10px; border:1px solid var(--border); margin-bottom:8px; transition:all .2s; }
+  .hy-item:hover { border-color:var(--primary-light); background:#fafafd; }
+  .hy-num { width:28px; height:28px; background:var(--bg); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; flex-shrink:0; }
+  .hy-name { font-size:13px; font-weight:600; flex:1; }
+  .hy-freq { font-size:11px; color:var(--muted); }
+  .priority-badge { font-size:10px; font-weight:700; padding:2px 7px; border-radius:20px; }
+  .priority-badge.high { background:#fee2e2; color:#dc2626; }
+  .priority-badge.mod { background:#fef9c3; color:#92400e; }
+
+  /* AI PATTERN CARD */
+  .pattern-card { background:#fff; border-radius:var(--radius); padding:24px; box-shadow:var(--shadow); }
+  .pattern-card .pc-icon { font-size:28px; margin-bottom:10px; }
+  .pattern-card h3 { font-family:'Syne',sans-serif; font-size:17px; font-weight:700; margin-bottom:12px; }
+  .pattern-card p { font-size:13px; color:var(--muted); line-height:1.7; margin-bottom:12px; }
+  .highlight { color:var(--primary); font-weight:700; }
+  .tag { background:#ededfb; color:var(--primary); font-size:11px; font-weight:600; padding:4px 10px; border-radius:20px; display:inline-block; margin:4px 4px 4px 0; }
+
+  /* TABLE */
+  table { width:100%; border-collapse:collapse; }
+  th { font-size:12px; font-weight:600; color:var(--muted); text-align:left; padding:12px 16px; border-bottom:2px solid var(--border); }
+  td { font-size:13px; padding:14px 16px; border-bottom:1px solid var(--border); }
+  tr:last-child td { border-bottom:none; }
+  .score-bar { display:flex; align-items:center; gap:8px; }
+  .bar-bg { background:var(--bg); border-radius:4px; height:6px; width:80px; overflow:hidden; }
+  .bar-fill { height:100%; border-radius:4px; background:var(--primary); }
+  .trend-up { color:#16a34a; font-size:16px; }
+  .trend-down { color:#dc2626; font-size:16px; }
+  .trend-flat { color:var(--muted); font-size:16px; }
+
+  /* STUDY PLAN */
+  .roadmap-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:24px; }
+  .daily-goal { width:90px; height:90px; border-radius:50%; border:6px solid var(--border); display:flex; align-items:center; justify-content:center; flex-direction:column; position:relative; }
+  .daily-goal-fill { position:absolute; inset:0; border-radius:50%; background:conic-gradient(var(--primary) 70%, transparent 70%); opacity:.3; }
+  .daily-goal span { font-family:'Syne',sans-serif; font-size:22px; font-weight:800; color:var(--primary); position:relative; z-index:1; }
+  .daily-goal small { font-size:10px; color:var(--muted); position:relative; z-index:1; }
+  .week-row { display:flex; gap:8px; margin-bottom:20px; }
+  .day-btn { flex:1; padding:10px 6px; border-radius:10px; border:1px solid var(--border); background:#fff; text-align:center; cursor:pointer; transition:all .2s; }
+  .day-btn .day-name { font-size:10px; font-weight:600; color:var(--muted); }
+  .day-btn .day-num { font-family:'Syne',sans-serif; font-size:18px; font-weight:700; margin:4px 0; }
+  .day-btn .day-dot { width:5px; height:5px; border-radius:50%; background:var(--border); margin:0 auto; }
+  .day-btn.active { background:var(--primary); border-color:var(--primary); color:#fff; }
+  .day-btn.active .day-name, .day-btn.active .day-num { color:#fff; }
+  .day-btn.active .day-dot { background:rgba(255,255,255,.5); }
+  .session-item { background:#fafbff; border-radius:10px; border:1px solid var(--border); padding:14px 16px; margin-bottom:10px; display:flex; align-items:center; justify-content:space-between; }
+  .session-left { display:flex; align-items:center; gap:12px; }
+  .session-icon { font-size:18px; color:var(--muted); }
+  .session-title { font-size:13px; font-weight:600; }
+  .session-time { font-size:11px; color:var(--muted); }
+  .session-badge { font-size:10px; font-weight:700; padding:3px 8px; border-radius:20px; }
+  .badge-progress { background:#dbeafe; color:#1d4ed8; }
+  .badge-upcoming { background:#f3f4f6; color:var(--muted); }
+  .ai-actions { background:linear-gradient(135deg,var(--primary),var(--primary-light)); border-radius:var(--radius); padding:20px; }
+  .ai-actions-title { font-family:'Syne',sans-serif; font-size:15px; font-weight:700; color:#fff; margin-bottom:14px; display:flex; align-items:center; gap:6px; }
+  .action-item { background:rgba(255,255,255,.15); border-radius:10px; padding:12px; margin-bottom:8px; backdrop-filter:blur(4px); }
+  .action-item.checked { background:rgba(255,255,255,.25); }
+  .action-priority { font-size:10px; font-weight:700; padding:2px 6px; border-radius:10px; display:inline-block; margin-bottom:4px; }
+  .action-priority.high { background:#fee2e2; color:#dc2626; }
+  .action-priority.med { background:#fef9c3; color:#92400e; }
+  .action-priority.low { background:#dcfce7; color:#16a34a; }
+  .action-title { font-size:12px; font-weight:600; color:#fff; }
+  .action-sub { font-size:11px; color:rgba(255,255,255,.7); }
+  .perf-predictor { display:flex; gap:20px; align-items:stretch; }
+  .perf-img { width:240px; border-radius:var(--radius); overflow:hidden; background:#0a0a1a; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .perf-img span { font-size:48px; }
+  .perf-text { flex:1; }
+  .perf-text h3 { font-family:'Syne',sans-serif; font-size:20px; font-weight:700; margin-bottom:10px; }
+  .perf-text p { font-size:13px; color:var(--muted); line-height:1.7; margin-bottom:16px; }
+  .btn-group { display:flex; gap:10px; }
+
+  /* PRACTICE */
+  .practice-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:20px; }
+  .mastery-box { background:var(--primary); color:#fff; border-radius:var(--radius); padding:20px 24px; width:160px; text-align:center; }
+  .mastery-label { font-size:11px; font-weight:600; opacity:.7; text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px; }
+  .mastery-val { font-family:'Syne',sans-serif; font-size:40px; font-weight:800; }
+  .question-card { background:#fff; border-radius:var(--radius); box-shadow:var(--shadow); padding:24px; margin-bottom:16px; position:relative; }
+  .q-tags { display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
+  .q-tag { font-size:11px; font-weight:700; padding:4px 10px; border-radius:20px; }
+  .q-tag.hard { background:#fee2e2; color:#dc2626; }
+  .q-tag.medium { background:#fef9c3; color:#92400e; }
+  .q-tag.easy { background:#dcfce7; color:#16a34a; }
+  .q-tag.paper { background:#e0e7ff; color:var(--primary); }
+  .q-text { font-size:15px; font-weight:500; line-height:1.7; margin-bottom:16px; }
+  .q-footer { display:flex; align-items:center; gap:16px; }
+  .reveal-btn { display:flex; align-items:center; gap:6px; background:none; border:none; cursor:pointer; color:var(--primary); font-size:13px; font-weight:600; }
+  .reveal-btn:hover { text-decoration:underline; }
+  .time-hint { font-size:12px; color:var(--muted); }
+  .bookmark-btn { position:absolute; top:20px; right:20px; background:none; border:none; cursor:pointer; font-size:18px; color:var(--muted); }
+  .bookmark-btn.saved { color:var(--primary); }
+  .answer-box { background:#f8f9ff; border-radius:10px; border:1px solid var(--border); padding:16px; margin-top:14px; font-size:13px; color:var(--muted); line-height:1.7; font-style:italic; }
+  .ai-solution { display:flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:var(--primary); margin-top:14px; cursor:pointer; }
+  .topic-progress { margin-bottom:10px; }
+  .tp-label { display:flex; justify-content:space-between; font-size:12px; color:var(--muted); margin-bottom:6px; }
+  .tp-bar { background:var(--border); border-radius:4px; height:6px; overflow:hidden; }
+  .tp-fill { height:100%; border-radius:4px; background:var(--primary); }
+  .select-topic { padding:9px 14px; border:1px solid var(--border); border-radius:8px; font-size:13px; font-weight:500; background:#fff; cursor:pointer; }
+  .deep-dive { background:linear-gradient(135deg,#2a2a9e,var(--primary)); border-radius:var(--radius); padding:28px; color:#fff; margin-top:16px; }
+  .deep-dive h3 { font-family:'Syne',sans-serif; font-size:20px; font-weight:700; margin-bottom:8px; }
+  .deep-dive p { font-size:13px; opacity:.85; margin-bottom:16px; line-height:1.6; }
+
+  /* LOADING */
+  .loading { text-align:center; padding:40px; color:var(--muted); font-size:14px; }
+  .spinner { display:inline-block; width:32px; height:32px; border:3px solid var(--border); border-top-color:var(--primary); border-radius:50%; animation:spin .8s linear infinite; margin-bottom:10px; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  /* TOAST */
+  .toast { position:fixed; bottom:24px; right:24px; background:#1a1a2e; color:#fff; padding:12px 20px; border-radius:10px; font-size:13px; font-weight:500; opacity:0; transform:translateY(20px); transition:all .3s; z-index:9999; }
+  .toast.show { opacity:1; transform:translateY(0); }
+
+  /* DIFF TREND */
+  .trend-chart { background:#fff; border-radius:var(--radius); padding:20px; box-shadow:var(--shadow); }
+  .trend-chart h3 { font-size:16px; font-weight:700; margin-bottom:4px; }
+  .trend-meta { display:flex; gap:8px; align-items:center; margin-bottom:16px; }
+  .trend-year { font-size:11px; background:var(--bg); padding:3px 8px; border-radius:20px; color:var(--muted); font-weight:600; }
+  .chart-area { position:relative; height:120px; }
+  svg.trend-svg { width:100%; height:100%; }
+  .trend-stats { display:flex; gap:8px; margin-top:12px; }
+  .trend-stat { flex:1; background:var(--bg); padding:10px; border-radius:10px; text-align:center; }
+  .trend-stat .ts-val { font-family:'Syne',sans-serif; font-size:16px; font-weight:700; color:var(--primary); }
+  .trend-stat .ts-key { font-size:10px; color:var(--muted); font-weight:600; }
+
+  /* EXPORT BTN */
+  .export-btn { display:flex; align-items:center; gap:8px; background:var(--primary); color:#fff; border:none; padding:10px 18px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; }
+  .export-btn:hover { background:var(--primary-dark); }
+
+  /* RESPONSIVE */
+  @media(max-width:900px) {
+    .sidebar { display:none; }
+    .main { margin-left:0; }
+    .topbar { left:0; }
+    .grid-3 { grid-template-columns:1fr 1fr; }
+    .insights-grid { grid-template-columns:1fr; }
+    .perf-predictor { flex-direction:column; }
+  }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="logo">PrepAI</div>
+  <div class="user-card">
+    <div class="avatar" id="avatarSidebar">AS</div>
+    <div class="user-info">
+      <div class="name" id="nameSidebar">Alex Study</div>
+      <div class="univ">University of Excellence</div>
+    </div>
+  </div>
+  <div class="nav-item active" onclick="navigate('upload')"><span class="nav-icon">☁️</span>Upload</div>
+  <div class="nav-item" onclick="navigate('dashboard')"><span class="nav-icon">📊</span>Dashboard</div>
+  <div class="nav-item" onclick="navigate('studyplan')"><span class="nav-icon">📅</span>Study Plan</div>
+  <div class="nav-item" onclick="navigate('insights')"><span class="nav-icon">🔍</span>Insights</div>
+  <div class="nav-item" onclick="navigate('practice')"><span class="nav-icon">✏️</span>Practice</div>
+</aside>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <a onclick="navigate('upload')" id="top-upload">Upload</a>
+  <a onclick="navigate('dashboard')" id="top-dashboard">Dashboard</a>
+  <a onclick="navigate('studyplan')" id="top-studyplan">Study Plan</a>
+  <a onclick="navigate('insights')" id="top-insights">Insights</a>
+  <a onclick="navigate('practice')" id="top-practice">Practice</a>
+  <div class="avatar" style="width:32px;height:32px;font-size:12px;">AS</div>
+</header>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- ========== UPLOAD PAGE ========== -->
+  <div class="page active" id="page-upload">
+    <div class="section-title">Upload Past Papers</div>
+    <div class="section-sub">Our AI will analyze your exam papers to identify recurring themes and difficulty patterns.</div>
+    <div style="display:grid;grid-template-columns:1fr 280px;gap:20px;align-items:start;">
+      <div>
+        <div class="upload-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+          <div class="upload-icon">☁️</div>
+          <h3>Drag and drop your PDF files</h3>
+          <p>Limit 20MB per file • Supports PDF format only</p>
+          <button class="btn-primary" onclick="event.stopPropagation();document.getElementById('fileInput').click()">Select Files from Device</button>
+          <input type="file" id="fileInput" accept=".pdf" multiple style="display:none" onchange="handleFiles(this.files)"/>
+        </div>
+        <div class="file-list" id="fileList"></div>
+        <div class="analyze-bar" id="analyzeBar" style="display:none">
+          <div class="analyze-info">ℹ️ <span id="analyzeCount">0</span> papers will be processed using the Advanced Pattern Recognition engine.</div>
+          <div style="display:flex;gap:10px;">
+            <button class="btn-outline" onclick="clearFiles()">Cancel</button>
+            <button class="btn-primary" onclick="analyzePapers()">Analyze Papers →</button>
+          </div>
+        </div>
+        <div id="analyzeProgress" style="display:none;" class="card" style="margin-top:16px;">
+          <div class="loading">
+            <div class="spinner"></div>
+            <div id="progressText">Analyzing papers with AI...</div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="tips-card">
+          <div class="tips-title">Preparation Tips</div>
+          <div class="tip-item"><span class="tip-check">✅</span>Ensure text is legible and not scanned as poor quality images.</div>
+          <div class="tip-item"><span class="tip-check">✅</span>Include marking schemes for more accurate AI Insights.</div>
+          <div class="tip-item"><span class="tip-check">✅</span>Rename files with Year/Subject for better organization.</div>
+        </div>
+        <div class="card" style="margin-top:16px;">
+          <div class="ai-badge">✨ New Feature</div>
+          <p style="font-size:12px;color:var(--muted);margin-top:8px;">AI can now detect handwritten annotations!</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== DASHBOARD PAGE ========== -->
+  <div class="page" id="page-dashboard">
+    <div class="grid-3">
+      <div class="stat-card">
+        <div class="stat-badge green">+12% vs last term</div>
+        <div class="stat-icon">📖</div>
+        <div class="stat-label">Total Topics</div>
+        <div class="stat-value" id="totalTopics">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-badge red">Requires Attention</div>
+        <div class="stat-icon">⚠️</div>
+        <div class="stat-label">High Priority Topics</div>
+        <div class="stat-value" id="highPriorityTopics">—</div>
+      </div>
+      <div class="weak-card">
+        <div class="weak-title">Weak Areas</div>
+        <div id="weakAreasList">
+          <div class="loading"><div class="spinner"></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <h3 class="section-title" style="font-size:16px;margin-bottom:4px;">Topic Frequency</h3>
+        <div id="topicFreqChart" style="height:180px;display:flex;align-items:flex-end;gap:10px;padding:10px 0;">
+          <div class="loading" style="flex:1"><div class="spinner"></div></div>
+        </div>
+      </div>
+      <div class="trend-chart">
+        <h3>Difficulty Trend</h3>
+        <div class="trend-meta">
+          <span class="trend-year">2018</span>
+          <span class="trend-year">2023</span>
+        </div>
+        <div class="chart-area">
+          <svg class="trend-svg" viewBox="0 0 300 100">
+            <polyline fill="none" stroke="var(--primary)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"
+              points="0,80 40,70 80,65 120,45 160,50 200,40 240,55 280,20"/>
+            <circle cx="280" cy="20" r="5" fill="var(--primary)"/>
+          </svg>
+        </div>
+        <div class="trend-stats">
+          <div class="trend-stat"><div class="ts-val">2022</div><div class="ts-key">Peak</div></div>
+          <div class="trend-stat"><div class="ts-val" id="avgDiff">7.2/10</div><div class="ts-key">Avg</div></div>
+          <div class="trend-stat"><div class="ts-val" style="color:#16a34a;">Rising</div><div class="ts-key">Trend</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h3 class="section-title" style="font-size:16px;margin-bottom:4px;">Topic Coverage Heatmap</h3>
+      <p class="section-sub">Visualization of syllabus coverage based on past paper frequency.</p>
+      <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-bottom:8px;">
+        <span style="font-size:11px;color:var(--muted);">Low</span>
+        <div style="width:80px;height:12px;border-radius:4px;background:linear-gradient(to right,#dde0ff,var(--primary));"></div>
+        <span style="font-size:11px;color:var(--muted);">High</span>
+      </div>
+      <div class="heatmap-grid" id="heatmapGrid"></div>
+    </div>
+    <div class="ai-banner">
+      <div class="ai-badge" style="background:rgba(255,255,255,.2);color:#fff;">⚡ AI INSIGHT</div>
+      <h3 id="aiInsightTitle">Focus on 'Vector Calculus' this week.</h3>
+      <p id="aiInsightText">Based on 5 years of exam trends, this topic has appeared in 80% of final papers but currently ranks as your lowest performance area.</p>
+      <button class="btn-outline" style="border-color:#fff;color:#fff;" onclick="navigate('practice')">Start Practice Session</button>
+    </div>
+  </div>
+
+  <!-- ========== INSIGHTS PAGE ========== -->
+  <div class="page" id="page-insights">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;">
+      <div>
+        <div class="section-title">Exam Insights</div>
+        <p class="section-sub" id="insightsSubtitle">Advanced analytical breakdown of past papers for <strong>Advanced Thermodynamics (MECH301)</strong>.</p>
+      </div>
+      <button class="export-btn" onclick="exportReport()">⬇️ Export Report</button>
+    </div>
+    <div class="insights-grid">
+      <div class="pattern-card">
+        <div class="pc-icon">🤖</div>
+        <h3>AI Pattern Analysis</h3>
+        <div id="patternText">
+          <div class="loading"><div class="spinner"></div></div>
+        </div>
+      </div>
+      <div class="high-yield">
+        <div class="hy-title">High-Yield Topics</div>
+        <div id="highYieldList">
+          <div class="loading"><div class="spinner"></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <h3 class="section-title" style="font-size:16px;">Comprehensive Topic Importance</h3>
+        <div style="display:flex;gap:12px;align-items:center;font-size:12px;">
+          <span style="display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;background:var(--primary);border-radius:50%;display:inline-block;"></span>Core Concepts</span>
+          <span style="display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;background:#f59e0b;border-radius:50%;display:inline-block;"></span>Applied Logic</span>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>Topic Name</th><th>Importance Score</th><th>Avg. Marks</th><th>Last Appearance</th><th>Trend</th></tr></thead>
+        <tbody id="topicTable">
+          <tr><td colspan="5" class="loading"><div class="spinner"></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="ai-banner" style="margin-top:20px;display:flex;align-items:center;justify-content:space-between;gap:24px;">
+      <div>
+        <h3 style="margin-bottom:8px;">Ready to tackle these patterns?</h3>
+        <p>We've generated a customized practice set based on the high-yield topics identified above. Start practicing now to master the predicted exam structure.</p>
+      </div>
+      <button class="btn-outline" style="border-color:#fff;color:#fff;white-space:nowrap;" onclick="navigate('practice')">Start Practice Session</button>
+    </div>
+  </div>
+
+  <!-- ========== STUDY PLAN PAGE ========== -->
+  <div class="page" id="page-studyplan">
+    <div class="roadmap-header">
+      <div>
+        <div class="section-title">Your Study Roadmap</div>
+        <p class="section-sub">AI-optimized schedule based on your recent Thermodynamics and fluid mechanics past papers.</p>
+      </div>
+      <div class="daily-goal">
+        <div class="daily-goal-fill"></div>
+        <span>70%</span>
+        <small>DAILY GOAL</small>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start;">
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+          <h3 style="font-size:15px;font-weight:700;">Weekly Overview</h3>
+          <div style="display:flex;gap:8px;">
+            <button style="background:none;border:1px solid var(--border);border-radius:8px;width:28px;height:28px;cursor:pointer;">‹</button>
+            <button style="background:none;border:1px solid var(--border);border-radius:8px;width:28px;height:28px;cursor:pointer;">›</button>
+          </div>
+        </div>
+        <div class="week-row">
+          <div class="day-btn"><div class="day-name">MON</div><div class="day-num">12</div><div class="day-dot"></div></div>
+          <div class="day-btn"><div class="day-name">TUE</div><div class="day-num">13</div><div class="day-dot"></div></div>
+          <div class="day-btn"><div class="day-name">WED</div><div class="day-num">14</div><div class="day-dot"></div></div>
+          <div class="day-btn active"><div class="day-name">THU</div><div class="day-num">15</div><div class="day-dot"></div></div>
+          <div class="day-btn"><div class="day-name">FRI</div><div class="day-num">16</div><div class="day-dot"></div></div>
+          <div class="day-btn"><div class="day-name">SAT</div><div class="day-num">17</div><div class="day-dot"></div></div>
+          <div class="day-btn"><div class="day-name">SUN</div><div class="day-num">18</div><div class="day-dot"></div></div>
+        </div>
+        <div id="studySessions">
+          <div class="session-item">
+            <div class="session-left">
+              <span class="session-icon">🕘</span>
+              <div>
+                <div class="session-title">Morning Deep Work: Fluid Dynamics</div>
+                <div class="session-time">09:00 AM – 11:30 AM • Focusing on Laminar Flow Equations</div>
+              </div>
+            </div>
+            <span class="session-badge badge-progress">IN PROGRESS</span>
+          </div>
+          <div class="session-item">
+            <div class="session-left">
+              <span class="session-icon">🕑</span>
+              <div>
+                <div class="session-title">Past Paper Review: 2022 Session</div>
+                <div class="session-time">02:00 PM – 04:00 PM • Analysis of Section B</div>
+              </div>
+            </div>
+            <span class="session-badge badge-upcoming">UPCOMING</span>
+          </div>
+        </div>
+      </div>
+      <div class="ai-actions">
+        <div class="ai-actions-title">⚡ AI Study Actions</div>
+        <div class="action-item">
+          <div class="action-priority high">HIGH PRIORITY</div>
+          <div class="action-title">Re-solve problem 4c from 2021 Finals</div>
+          <div class="action-sub">Based on common failure patterns</div>
+        </div>
+        <div class="action-item checked">
+          <div class="action-priority med">MEDIUM</div>
+          <div class="action-title" style="text-decoration:line-through;opacity:.7;">Review Thermodynamic Laws</div>
+          <div class="action-sub">Found weak link in Chapter 3 concepts</div>
+        </div>
+        <div class="action-item">
+          <div class="action-priority low">LOW</div>
+          <div class="action-title">Organize revision flashcards</div>
+          <div class="action-sub">Prep for tomorrow's flash-round</div>
+        </div>
+        <button class="btn-outline" style="width:100%;margin-top:12px;border-color:rgba(255,255,255,.5);color:#fff;" onclick="generateTasks()">Generate More Tasks</button>
+      </div>
+    </div>
+    <div class="card" style="margin-top:20px;">
+      <div class="perf-predictor">
+        <div class="perf-img" style="min-height:180px;background:linear-gradient(135deg,#0a0a1a,#1a1a3e);">
+          <span>📈</span>
+        </div>
+        <div class="perf-text">
+          <h3>AI Performance Predictor</h3>
+          <p>Based on your current study velocity and the 12 tasks completed this week. PrepAI predicts an <strong>82% mastery level</strong> for the upcoming exam. Focus on <strong>entropy calculations</strong> to boost this by another 5%.</p>
+          <div class="btn-group">
+            <button class="btn-primary" onclick="navigate('insights')">Deep Insight Report</button>
+            <button class="btn-outline">Adjust My Goals</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== PRACTICE PAGE ========== -->
+  <div class="page" id="page-practice">
+    <div class="practice-header">
+      <div>
+        <div class="section-title">Practice Laboratory</div>
+        <p class="section-sub">Target your weak points with AI-extracted past paper questions.</p>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <select class="select-topic" id="topicSelect" onchange="loadPracticeQuestions()">
+          <option>Quantum Mechanics II</option>
+          <option>Advanced Thermodynamics</option>
+          <option>Electromagnetic Theory</option>
+          <option>Vector Calculus</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:200px 1fr;gap:20px;align-items:start;">
+      <div class="mastery-box">
+        <div class="mastery-label">Mastery Level</div>
+        <div class="mastery-val" id="masteryVal">72%</div>
+        <div style="margin-top:12px;">
+          <div class="topic-progress">
+            <div class="tp-label"><span>Topic Completion</span><span id="qProgress">18/25</span></div>
+            <div class="tp-bar"><div class="tp-fill" id="qBar" style="width:72%"></div></div>
+          </div>
+        </div>
+      </div>
+      <div id="questionsContainer">
+        <div class="loading"><div class="spinner"></div><div>Loading questions...</div></div>
+      </div>
+    </div>
+    <div class="deep-dive">
+      <h3>Need a deep dive?</h3>
+      <p>Our AI can generate a personalized practice session focusing specifically on <strong>'Particle in a Box'</strong> based on your recent mistakes.</p>
+      <button class="btn-outline" style="border-color:#fff;color:#fff;" onclick="startSmartSession()">Start Smart Session</button>
+    </div>
+  </div>
+
+</main>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+const API = 'http://127.0.0.1:8000';
+let uploadedFiles = [];
+let analysisData = null;
+
+// ========== NAVIGATION ==========
+function navigate(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.topbar a').forEach(a => a.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.textContent.trim().toLowerCase().replace(' ','') === page.toLowerCase()) n.classList.add('active');
+  });
+  const topEl = document.getElementById('top-' + page);
+  if (topEl) topEl.classList.add('active');
+
+  if (page === 'dashboard') loadDashboard();
+  if (page === 'insights') loadInsights();
+  if (page === 'practice') loadPracticeQuestions();
+}
+
+// ========== TOAST ==========
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ========== UPLOAD ==========
+const dropZone = document.getElementById('dropZone');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag'));
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('drag'); handleFiles(e.dataTransfer.files); });
+
+function handleFiles(files) {
+  for (const f of files) {
+    if (f.type !== 'application/pdf') { showToast('Only PDF files are supported'); continue; }
+    if (f.size > 20 * 1024 * 1024) { showToast('File too large (max 20MB)'); continue; }
+    uploadedFiles.push(f);
+  }
+  renderFileList();
+}
+
+function renderFileList() {
+  const list = document.getElementById('fileList');
+  const bar = document.getElementById('analyzeBar');
+  if (!uploadedFiles.length) { list.innerHTML = ''; bar.style.display = 'none'; return; }
+  bar.style.display = 'flex';
+  document.getElementById('analyzeCount').textContent = uploadedFiles.length;
+  list.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;"><h4 style="font-size:13px;font-weight:600;">Uploaded Files (${uploadedFiles.length})</h4><span style="font-size:12px;color:var(--muted);">Total Size: ${(uploadedFiles.reduce((a,f)=>a+f.size,0)/1024/1024).toFixed(1)} MB</span></div>` +
+    uploadedFiles.map((f, i) => `
+      <div class="file-item">
+        <div class="file-left">
+          <span class="file-icon">📄</span>
+          <div><div class="file-name">${f.name}</div><div class="file-size">${(f.size/1024/1024).toFixed(1)} MB • Ready to analyze</div></div>
+        </div>
+        <button class="file-delete" onclick="removeFile(${i})">🗑️</button>
+      </div>`).join('');
+}
+
+function removeFile(i) { uploadedFiles.splice(i, 1); renderFileList(); }
+function clearFiles() { uploadedFiles = []; renderFileList(); }
+
+async function analyzePapers() {
+  if (!uploadedFiles.length) return;
+  document.getElementById('analyzeBar').style.display = 'none';
+  const prog = document.getElementById('analyzeProgress');
+  prog.style.display = 'block';
+  const texts = ['Extracting text from PDFs...', 'Identifying question patterns...', 'Running AI analysis...', 'Building your insights...'];
+  let ti = 0;
+  const iv = setInterval(() => { document.getElementById('progressText').textContent = texts[ti++ % texts.length]; }, 1500);
+
+  const fd = new FormData();
+  for (const f of uploadedFiles) fd.append('files', f);
+  try {
+    const res = await fetch(`${API}/upload`, { method: 'POST', body: fd });
+    clearInterval(iv);
+    if (res.ok) {
+      const data = await res.json();
+      analysisData = data;
+      showToast('✅ Analysis complete! Redirecting to Dashboard...');
+      setTimeout(() => { prog.style.display = 'none'; navigate('dashboard'); }, 1500);
+    } else {
+      throw new Error('Upload failed');
+    }
+  } catch (e) {
+    clearInterval(iv);
+    prog.style.display = 'none';
+    document.getElementById('analyzeBar').style.display = 'flex';
+    showToast('⚠️ Could not connect to backend. Make sure server is running on port 8000.');
+  }
+}
+
+// ========== DASHBOARD ==========
+async function loadDashboard() {
+  renderHeatmap();
+  try {
+    const [topicsRes, insightsRes] = await Promise.all([
+      fetch(`${API}/topics`),
+      fetch(`${API}/insights`)
+    ]);
+    const topics = topicsRes.ok ? await topicsRes.json() : null;
+    const insights = insightsRes.ok ? await insightsRes.json() : null;
+
+    if (topics) {
+      document.getElementById('totalTopics').textContent = String(topics.total || 42).padStart(2,'0');
+      document.getElementById('highPriorityTopics').textContent = String(topics.high_priority || 8).padStart(2,'0');
+      renderWeakAreas(topics.weak_areas || []);
+      renderTopicFreq(topics.topics || []);
+    } else {
+      // Demo fallback
+      document.getElementById('totalTopics').textContent = '42';
+      document.getElementById('highPriorityTopics').textContent = '08';
+      renderWeakAreas([
+        {name:'Quantum Mechanics II'},{name:'Advanced Thermodynamics'},{name:'Electromagnetic Theory'}
+      ]);
+      renderTopicFreqDemo();
+    }
+
+    if (insights) {
+      const ai = insights.ai_insight || {};
+      if (ai.title) document.getElementById('aiInsightTitle').textContent = ai.title;
+      if (ai.description) document.getElementById('aiInsightText').textContent = ai.description;
+    }
+  } catch(e) {
+    document.getElementById('totalTopics').textContent = '42';
+    document.getElementById('highPriorityTopics').textContent = '08';
+    renderWeakAreas([{name:'Quantum Mechanics II'},{name:'Advanced Thermodynamics'},{name:'Electromagnetic Theory'}]);
+    renderTopicFreqDemo();
+  }
+}
+
+function renderWeakAreas(areas) {
+  const el = document.getElementById('weakAreasList');
+  if (!areas.length) { el.innerHTML = '<p style="font-size:13px;color:var(--muted);">No weak areas detected.</p>'; return; }
+  el.innerHTML = areas.slice(0,4).map(a => `<div class="weak-item"><span class="warn-icon">⚠️</span>${a.name||a}</div>`).join('');
+}
+
+function renderTopicFreq(topics) {
+  const el = document.getElementById('topicFreqChart');
+  const max = Math.max(...topics.map(t=>t.frequency||10));
+  el.innerHTML = topics.slice(0,6).map((t,i)=>{
+    const h = Math.max(20, ((t.frequency||((6-i)*15))/max)*140);
+    const colors = ['#3d3dc8','#6b6bde','#8e8ee8','#b0b0f2','#c8c8f8','#dde0ff'];
+    return `<div style="display:flex;flex-direction:column;align-items:center;flex:1;gap:6px;">
+      <div style="width:100%;background:${colors[i%colors.length]};border-radius:6px 6px 0 0;height:${h}px;transition:height .3s;"></div>
+      <span style="font-size:10px;color:var(--muted);font-weight:600;">Topic ${String.fromCharCode(65+i)}</span>
+    </div>`;
+  }).join('');
+}
+
+function renderTopicFreqDemo() {
+  const freqs = [85,60,40,95,50,70];
+  renderTopicFreq(freqs.map((f,i)=>({name:`Topic ${String.fromCharCode(65+i)}`,frequency:f})));
+}
+
+function renderHeatmap() {
+  const grid = document.getElementById('heatmapGrid');
+  const intensities = [0.9,0.6,0.3,0.8,0.4,1,0.5,0.85,0.2,0.7,0.3,0.7,0.5,0.4,0.95,0.2,0.4,0.3,0.8,0.9];
+  grid.innerHTML = intensities.map(v => {
+    const alpha = 0.15 + v * 0.85;
+    return `<div class="hm-cell" style="background:rgba(61,61,200,${alpha});" title="Frequency: ${Math.round(v*100)}%"></div>`;
+  }).join('');
+}
+
+// ========== INSIGHTS ==========
+async function loadInsights() {
+  try {
+    const res = await fetch(`${API}/insights`);
+    if (res.ok) {
+      const data = await res.json();
+      renderInsights(data);
+    } else throw new Error();
+  } catch(e) {
+    renderInsightsDemo();
+  }
+}
+
+function renderInsights(data) {
+  const pattern = data.pattern_analysis || {};
+  document.getElementById('patternText').innerHTML = `
+    <p>${pattern.summary || 'Analysis of the last 10 exam cycles indicates a significant shift towards <strong>Entropy Generation Minimization</strong> and <strong>Irreversible Thermodynamics</strong>. These topics now comprise approximately 45% of the total weighted marks.'}</p>
+    <div style="margin-top:10px;">${(pattern.tags||['Phase-Equilibrium (Critical)','Turbine Efficiency Patterns']).map(t=>`<span class="tag">${t}</span>`).join('')}</div>`;
+
+  const hyTopics = data.high_yield_topics || [];
+  document.getElementById('highYieldList').innerHTML = hyTopics.length
+    ? hyTopics.slice(0,5).map((t,i) => `
+      <div class="hy-item">
+        <div class="hy-num">${i+1}</div>
+        <div style="flex:1"><div class="hy-name">${t.name}</div><div class="hy-freq">Frequency: ${t.frequency}%</div></div>
+        <span class="priority-badge ${t.priority==='HIGH'?'high':'mod'}">${t.priority||'MODERATE'}</span>
+      </div>`).join('')
+    : renderHYDemo();
+
+  const topics = data.topics || [];
+  document.getElementById('topicTable').innerHTML = topics.length
+    ? topics.map(t => `
+      <tr>
+        <td style="font-weight:500">${t.name}</td>
+        <td><div class="score-bar"><div class="bar-bg"><div class="bar-fill" style="width:${t.importance_score*10}%"></div></div>${t.importance_score}/10</div></td>
+        <td>${t.avg_marks} pts</td>
+        <td>${t.last_appearance}</td>
+        <td>${t.trend==='up'?'<span class="trend-up">↑</span>':t.trend==='down'?'<span class="trend-down">↓</span>':'<span class="trend-flat">—</span>'}</td>
+      </tr>`).join('')
+    : renderTopicTableDemo();
+}
+
+function renderInsightsDemo() {
+  document.getElementById('patternText').innerHTML = `
+    <p>Analysis of the last 10 exam cycles indicates a significant shift towards <strong class="highlight">Entropy Generation Minimization</strong> and <strong class="highlight">Irreversible Thermodynamics</strong>. These topics now comprise approximately 45% of the total weighted marks.</p>
+    <p style="margin-top:8px;font-size:13px;color:var(--muted);">We've detected a recurring pattern where Question 4 always synthesizes concepts from Maxwell Relations with real-world gas turbine efficiencies.</p>
+    <div style="margin-top:12px;"><span class="tag">Phase-Equilibrium (Critical)</span><span class="tag">Turbine Efficiency Patterns</span></div>`;
+  document.getElementById('highYieldList').innerHTML = [
+    {name:'Second Law Analysis',freq:92,p:'HIGH'},
+    {name:'Combustion Stoichiometry',freq:78,p:'HIGH'},
+    {name:'Psychrometric Applications',freq:65,p:'MODERATE'},
+    {name:'Exergy Destruction',freq:54,p:'MODERATE'},
+  ].map((t,i) => `
+    <div class="hy-item">
+      <div class="hy-num">${i+1}</div>
+      <div style="flex:1"><div class="hy-name">${t.name}</div><div class="hy-freq">Frequency: ${t.freq}%</div></div>
+      <span class="priority-badge ${t.p==='HIGH'?'high':'mod'}">${t.p}</span>
+    </div>`).join('');
+  document.getElementById('topicTable').innerHTML = renderTopicTableDemo();
+}
+
+function renderTopicTableDemo() {
+  const rows = [
+    {name:'Chemical Potential Equilibrium',score:9.5,marks:15.5,date:'Dec 2023',trend:'up'},
+    {name:'Nozzle and Diffuser Flows',score:8.2,marks:12.0,date:'June 2023',trend:'flat'},
+    {name:'Reciprocating Compressors',score:4.5,marks:8.0,date:'Dec 2022',trend:'down'},
+    {name:'Gas Power Cycles (Advanced)',score:7.0,marks:10.5,date:'June 2023',trend:'up'},
+  ];
+  return rows.map(t => `
+    <tr>
+      <td style="font-weight:500">${t.name}</td>
+      <td><div class="score-bar"><div class="bar-bg"><div class="bar-fill" style="width:${t.score*10}%"></div></div>${t.score}/10</div></td>
+      <td>${t.marks} pts</td>
+      <td>${t.date}</td>
+      <td>${t.trend==='up'?'<span class="trend-up">↑</span>':t.trend==='down'?'<span class="trend-down">↓</span>':'<span class="trend-flat">—</span>'}</td>
+    </tr>`).join('');
+}
+
+function exportReport() {
+  showToast('📄 Generating report...');
+  setTimeout(() => showToast('✅ Report downloaded!'), 1500);
+}
+
+// ========== PRACTICE ==========
+async function loadPracticeQuestions() {
+  const topic = document.getElementById('topicSelect').value;
+  const container = document.getElementById('questionsContainer');
+  container.innerHTML = '<div class="loading"><div class="spinner"></div><div>Loading questions...</div></div>';
+  try {
+    const res = await fetch(`${API}/practice?topic=${encodeURIComponent(topic)}`);
+    if (res.ok) {
+      const data = await res.json();
+      renderQuestions(data.questions || []);
+      if (data.mastery) {
+        document.getElementById('masteryVal').textContent = data.mastery + '%';
+        document.getElementById('qBar').style.width = data.mastery + '%';
+      }
+    } else throw new Error();
+  } catch(e) {
+    renderQuestionsDemo(topic);
+  }
+}
+
+function renderQuestions(questions) {
+  if (!questions.length) { renderQuestionsDemo(''); return; }
+  document.getElementById('questionsContainer').innerHTML = questions.map((q,i) => renderQuestionCard(q,i)).join('');
+}
+
+function renderQuestionsDemo(topic) {
+  const qs = topic.includes('Quantum') ? [
+    {difficulty:'Hard',paper:'Paper 2023, Q4',text:'Evaluate the expectation value of the Hamiltonian for a particle in a one-dimensional box when the wavefunction is a superposition of the first two eigenstates.',time:'12 mins'},
+    {difficulty:'Medium',paper:'Paper 2022, Q1(c)',text:'Derive the time-independent Schrödinger equation starting from the time-dependent form for a stationary state. Explain the physical significance of each term.',time:'10 mins',showAnswer:true,answer:'The key is to apply separation of variables, assuming Ψ(x,t) = ψ(x)φ(t)...'},
+    {difficulty:'Easy',paper:'Paper 2021, Q9',text:'State the normalization condition for a one-dimensional wavefunction and verify it for a particle in the ground state of an infinite square well.',time:'5 mins'},
+  ] : [
+    {difficulty:'Hard',paper:'Paper 2023, Q2',text:'Derive the expression for entropy generation in an irreversible heat engine operating between two reservoirs. Discuss the implications of the second law.',time:'15 mins'},
+    {difficulty:'Medium',paper:'Paper 2022, Q3(b)',text:'Apply the Maxwell relations to derive the Clausius-Clapeyron equation for phase transitions.',time:'10 mins'},
+  ];
+  document.getElementById('questionsContainer').innerHTML = qs.map((q,i)=>renderQuestionCard(q,i)).join('');
+}
+
+function renderQuestionCard(q,i) {
+  const diffClass = q.difficulty?.toLowerCase()==='hard'?'hard':q.difficulty?.toLowerCase()==='easy'?'easy':'medium';
+  return `
+    <div class="question-card" id="qcard-${i}">
+      <button class="bookmark-btn" id="bm-${i}" onclick="toggleBookmark(${i})">🔖</button>
+      <div class="q-tags">
+        <span class="q-tag ${diffClass}">${q.difficulty||'Medium'}</span>
+        <span class="q-tag paper">${q.paper||q.source||'Practice'}</span>
+      </div>
+      <div class="q-text">${q.text||q.question}</div>
+      <div class="q-footer">
+        <button class="reveal-btn" onclick="toggleAnswer(${i},'${encodeURIComponent(q.answer||'')}')">👁 Reveal Answer</button>
+        ${q.time ? `<span class="time-hint">• Estimated time: ${q.time}</span>` : ''}
+      </div>
+      <div id="answer-${i}" style="display:none">
+        <div class="answer-box">${q.answer||'"Apply the relevant equations step by step..."'}</div>
+        ${q.answer ? `<div class="ai-solution">✨ AI SOLUTION KEY</div>` : ''}
+      </div>
+    </div>`;
+}
+
+function toggleAnswer(i, encodedAnswer) {
+  const box = document.getElementById(`answer-${i}`);
+  const btn = box.previousElementSibling.querySelector('.reveal-btn');
+  if (box.style.display === 'none') {
+    box.style.display = 'block';
+    btn.textContent = '▲ Hide Answer';
+    if (!box.querySelector('.answer-box').textContent.trim()) {
+      box.querySelector('.answer-box').textContent = decodeURIComponent(encodedAnswer) || 'Review your notes for this topic.';
+    }
+  } else {
+    box.style.display = 'none';
+    btn.textContent = '👁 Reveal Answer';
+  }
+}
+
+function toggleBookmark(i) {
+  const btn = document.getElementById(`bm-${i}`);
+  btn.classList.toggle('saved');
+  showToast(btn.classList.contains('saved') ? '🔖 Question bookmarked!' : 'Bookmark removed');
+}
+
+function startSmartSession() { showToast('🚀 Starting smart session...'); loadPracticeQuestions(); }
+function generateTasks() { showToast('⚡ Generating more AI tasks...'); }
+
+// ========== INIT ==========
+navigate('upload');
+</script>
+</body>
+</html>
